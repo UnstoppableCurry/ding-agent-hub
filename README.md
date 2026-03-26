@@ -1,6 +1,6 @@
-# OpenClaw Admin Panel
+# Ding Agent Hub
 
-OpenClaw 用户管理面板 — 为 [OpenClaw](https://github.com/nicepkg/openclaw) AI Agent 平台提供可视化的用户管理、部门管理和工作空间同步功能。
+钉钉 AI Agent 企业管理平台 — 基于 [OpenClaw](https://github.com/nicepkg/openclaw) 的一站式解决方案，为企业提供可视化的用户管理、部门管理、Agent 隔离和工作空间同步。
 
 ## 功能特性
 
@@ -47,8 +47,8 @@ OpenClaw 用户管理面板 — 为 [OpenClaw](https://github.com/nicepkg/opencl
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/yourname/openclaw-admin.git
-cd openclaw-admin
+git clone https://github.com/yourname/ding-agent-hub.git
+cd ding-agent-hub
 ```
 
 ### 2. 配置环境变量
