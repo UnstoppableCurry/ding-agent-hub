@@ -1,6 +1,6 @@
-# OpenClaw Admin Panel
+# Ding Agent Hub
 
-A web-based admin panel for managing users, departments, and agent workspaces on the [OpenClaw](https://github.com/nicepkg/openclaw) AI Agent platform.
+Enterprise AI Agent management platform for DingTalk — A turnkey solution built on [OpenClaw](https://github.com/nicepkg/openclaw) for managing users, departments, and per-user agent workspaces.
 
 ## Features
 
@@ -47,8 +47,8 @@ A web-based admin panel for managing users, departments, and agent workspaces on
 ### 1. Clone
 
 ```bash
-git clone https://github.com/yourname/openclaw-admin.git
-cd openclaw-admin
+git clone https://github.com/yourname/ding-agent-hub.git
+cd ding-agent-hub
 ```
 
 ### 2. Configure
