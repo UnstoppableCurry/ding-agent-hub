@@ -1,0 +1,19 @@
+services:
+  admin-panel:
+    build: .
+    container_name: openclaw-admin
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_PORT:-8088}:8080"
+    volumes:
+      - ./data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    env_file:
+      - .env
+    networks:
+      - default
+      - claworc
+
+networks:
+  claworc:
+    external: true

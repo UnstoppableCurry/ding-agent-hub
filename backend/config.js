@@ -1,0 +1,16 @@
+export default {
+  port: parseInt(process.env.PORT || '8080'),
+  host: process.env.HOST || '0.0.0.0',
+  jwtSecret: process.env.JWT_SECRET || 'change-me-to-a-random-string',
+  adminUsername: process.env.ADMIN_USERNAME || 'admin',
+  adminPassword: process.env.ADMIN_PASSWORD || 'admin123',
+  dbPath: process.env.DB_PATH || './data/admin.db',
+  openclawConfigPath: process.env.OPENCLAW_CONFIG_PATH || '/home/claworc/.openclaw/openclaw.json',
+  anythingllmUrl: process.env.ANYTHINGLLM_URL || 'http://localhost:3001',
+  anythingllmApiKey: process.env.ANYTHINGLLM_API_KEY || '',
+  dockerSocket: process.env.DOCKER_SOCKET || '/var/run/docker.sock',
+  openclawContainer: process.env.OPENCLAW_CONTAINER || 'bot-openclaw-1',
+  openclawWorkspacesPath: process.env.OPENCLAW_WORKSPACES_PATH || '/home/claworc/.openclaw/workspaces',
+  openclawWorkspacesBackupPath: process.env.OPENCLAW_WORKSPACES_BACKUP_PATH || '/home/claworc/.openclaw/workspaces-backup',
+  monitorContainers: (process.env.MONITOR_CONTAINERS || 'bot-openclaw-1').split(',').map(s => s.trim()),
+};
