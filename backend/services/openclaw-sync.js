@@ -12,6 +12,7 @@ async function execInContainer(script) {
     Cmd: ['node', '-e', script],
     AttachStdout: true,
     AttachStderr: true,
+    User: 'claworc',
   });
   const stream = await exec.start();
 
