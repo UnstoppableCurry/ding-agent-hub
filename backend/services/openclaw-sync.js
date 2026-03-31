@@ -259,6 +259,46 @@ export async function syncAgents() {
       }
     }
 
+    // 5b-fix. Fix permissions for ALL active user workspaces (in case any were created as root)
+    if (activeUsers.length > 0) {
+      const allDirs = activeUsers.map(u => `${WORKSPACES_BASE}/${u.dingtalk_id}`);
+      const allDirsJson = JSON.stringify(allDirs);
+
+      const fixPermsScript = `
+        const fs = require('fs');
+        const path = require('path');
+        const { execSync } = require('child_process');
+        const dirs = ${allDirsJson};
+        let fixed = 0;
+        dirs.forEach(function(dir) {
+          if (fs.existsSync(dir)) {
+            try {
+              // Fix ownership to claworc:claworc (UID 1000:1000)
+              execSync('chown -R 1000:1000 ' + dir, { stdio: 'pipe' });
+              // Ensure directory is readable/writable/executable by owner
+              execSync('chmod -R u+rwX ' + dir, { stdio: 'pipe' });
+              fixed++;
+            } catch (e) {
+              console.warn('Permission fix failed for ' + dir + ': ' + e.message);
+            }
+          }
+        });
+        console.log(JSON.stringify({ ok: true, fixed: fixed }));
+      `;
+
+      try {
+        const fixPermsOutput = await execInContainer(fixPermsScript);
+        if (fixPermsOutput.includes('"ok":true')) {
+          const parsed = parseJsonFromOutput(fixPermsOutput);
+          if (parsed.fixed > 0) console.log(`Fixed permissions for ${parsed.fixed} workspace(s)`);
+        } else {
+          console.warn('Permission fix warning:', fixPermsOutput);
+        }
+      } catch (e) {
+        console.warn('Workspace permission fix warning:', e.message);
+      }
+    }
+
     // 5c. Backup workspaces for removed/disabled agents
     if (removedAgentIdSet.length > 0) {
       const removeDingtalkIds = removedAgentIdSet.map(id => id.replace('user-', ''));
