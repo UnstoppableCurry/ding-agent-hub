@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ding Agent Hub — 基于 OpenClaw 的钉钉 AI Agent 企业管理平台。架构说明、功能特性、工作空间隔离机制与 Docker 部署指南。">
+  <meta name="keywords" content="Ding Agent Hub, OpenClaw, 钉钉, AI Agent, 企业管理, Fastify, SQLite, Docker">
+  <meta name="author" content="UnstoppableCurry">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://unstoppablecurry.github.io/ding-agent-hub/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Ding Agent Hub — 钉钉 AI Agent 企业管理平台">
+  <meta property="og:description" content="基于 OpenClaw 的一站式解决方案：用户管理、部门管理、Agent 隔离与工作空间同步。">
+  <meta property="og:url" content="https://unstoppablecurry.github.io/ding-agent-hub/">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:site_name" content="Ding Agent Hub">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Ding Agent Hub — 钉钉 AI Agent 企业管理平台">
+  <meta name="twitter:description" content="基于 OpenClaw 的企业 AI Agent 管理平台架构与部署文档。">
+
+  <title>Ding Agent Hub — 钉钉 AI Agent 企业管理平台</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Ding Agent Hub",
+    "description": "钉钉 AI Agent 企业管理平台，基于 OpenClaw 提供用户管理、部门管理、Agent 隔离和工作空间同步。",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Docker",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "license": "https://opensource.org/licenses/MIT",
+    "codeRepository": "https://github.com/UnstoppableCurry/ding-agent-hub"
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳转到主要内容</a>
+
+  <header class="site-header" role="banner">
+    <div class="container header-inner">
+      <a class="brand" href="./" aria-label="Ding Agent Hub 首页">
+        <span class="brand-icon" aria-hidden="true">DA</span>
+        <span>Ding Agent Hub</span>
+      </a>
+
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="打开导航菜单">
+        ☰
+      </button>
+
+      <nav id="site-nav" class="site-nav" aria-label="页面导航">
+        <ul>
+          <li><a href="#features">功能</a></li>
+          <li><a href="#architecture">架构</a></li>
+          <li><a href="#isolation">隔离机制</a></li>
+          <li><a href="#sync">同步流程</a></li>
+          <li><a href="#deploy">部署</a></li>
+          <li><a href="#api">API</a></li>
+          <li><a href="#limitations">说明</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-actions">
+        <a class="btn btn-ghost" href="https://github.com/UnstoppableCurry/ding-agent-hub/blob/main/README.md" target="_blank" rel="noopener noreferrer">README</a>
+        <a class="btn btn-primary" href="https://github.com/UnstoppableCurry/ding-agent-hub" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container">
+        <div class="notice" role="note" aria-label="站点说明">
+          <strong>📄 静态文档站</strong>
+          <p>本页面为架构与产品说明，不提供在线管理面板演示。完整功能需在本地通过 Docker Compose 部署（Fastify 后端 + SQLite + Docker Socket + OpenClaw 容器）。</p>
+        </div>
+
+        <div class="hero-grid">
+          <div>
+            <div class="hero-badge">
+              <span class="hero-badge-dot" aria-hidden="true"></span>
+              基于 OpenClaw · 企业 AI Agent 管理
+            </div>
+            <h1 id="hero-title">钉钉 AI Agent<br>企业管理平台</h1>
+            <p class="hero-lead">
+              Ding Agent Hub 是基于 <a href="https://github.com/nicepkg/openclaw" target="_blank" rel="noopener noreferrer">OpenClaw</a> 的一站式解决方案，为企业提供可视化的用户管理、部门管理、Agent 隔离和工作空间同步。
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#deploy">查看部署指南</a>
+              <a class="btn btn-ghost" href="#architecture">了解系统架构</a>
+            </div>
+            <div class="hero-meta">
+              <span class="meta-chip">React 19 + Ant Design</span>
+              <span class="meta-chip">Fastify 5 + SQLite</span>
+              <span class="meta-chip">Docker Compose</span>
+              <span class="meta-chip">MIT License</span>
+            </div>
+          </div>
+
+          <aside class="hero-panel" aria-label="系统组件概览">
+            <p class="hero-panel-title">核心组件</p>
+            <svg viewBox="0 0 400 280" role="img" aria-labelledby="mini-arch-title mini-arch-desc">
+              <title id="mini-arch-title">系统组件关系简图</title>
+              <desc id="mini-arch-desc">React 前端连接 Fastify 后端，后端连接 OpenClaw Bot 和 AnythingLLM</desc>
+              <defs>
+                <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#3b82f6"/>
+                  <stop offset="100%" stop-color="#22d3ee"/>
+                </linearGradient>
+              </defs>
+              <rect x="20" y="30" width="110" height="56" rx="8" fill="#161d2e" stroke="#3b82f6" stroke-width="1.5"/>
+              <text x="75" y="55" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">React 前端</text>
+              <text x="75" y="72" text-anchor="middle" fill="#94a3b8" font-size="9">Ant Design</text>
+
+              <rect x="145" y="30" width="110" height="56" rx="8" fill="#161d2e" stroke="#22d3ee" stroke-width="1.5"/>
+              <text x="200" y="55" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">Fastify 后端</text>
+              <text x="200" y="72" text-anchor="middle" fill="#94a3b8" font-size="9">SQLite</text>
+
+              <rect x="270" y="30" width="110" height="56" rx="8" fill="#161d2e" stroke="#34d399" stroke-width="1.5"/>
+              <text x="325" y="55" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">OpenClaw Bot</text>
+              <text x="325" y="72" text-anchor="middle" fill="#94a3b8" font-size="9">Docker</text>
+
+              <line x1="130" y1="58" x2="145" y2="58" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+              <line x1="255" y1="58" x2="270" y2="58" stroke="#64748b" stroke-width="2"/>
+
+              <rect x="145" y="140" width="110" height="56" rx="8" fill="#161d2e" stroke="#a78bfa" stroke-width="1.5"/>
+              <text x="200" y="165" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">AnythingLLM</text>
+              <text x="200" y="182" text-anchor="middle" fill="#94a3b8" font-size="9">知识库（可选）</text>
+
+              <line x1="200" y1="86" x2="200" y2="140" stroke="#64748b" stroke-width="2" stroke-dasharray="4 3"/>
+
+              <rect x="20" y="210" width="360" height="50" rx="8" fill="rgba(59,130,246,0.08)" stroke="rgba(59,130,246,0.25)"/>
+              <text x="200" y="232" text-anchor="middle" fill="#93c5fd" font-size="10" font-weight="600">钉钉 DingTalk</text>
+              <text x="200" y="248" text-anchor="middle" fill="#94a3b8" font-size="9">allowlist · per-user Agent · AI Card 流式输出</text>
+            </svg>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" aria-labelledby="features-title">
+      <div class="container">
+        <header class="section-header">
+          <span class="section-label">Features</span>
+          <h2 id="features-title">功能特性</h2>
+          <p>以下功能均来自项目 README 与源码，涵盖用户生命周期管理与 OpenClaw 集成。</p>
+        </header>
+
+        <div class="feature-grid">
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">👥</div>
+            <h3>用户管理</h3>
+            <p>增删改查、Excel 批量导入、批量启用/停用。</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">🏢</div>
+            <h3>部门管理</h3>
+            <p>部门 CRUD，自动创建 AnythingLLM 工作空间。</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">🔄</div>
+            <h3>Agent 同步</h3>
+            <p>一键同步用户到 OpenClaw，自动创建/备份/恢复工作空间。</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">💬</div>
+            <h3>钉钉集成</h3>
+            <p>管理钉钉机器人 allowlist，实现 per-user Agent 隔离。</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">📇</div>
+            <h3>AI 卡片流式输出</h3>
+            <p>配置钉钉 AI Card，支持实时流式回复（STREAM callback）。</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">🐳</div>
+            <h3>容器监控</h3>
+            <p>实时查看 Docker 容器运行状态（通过 Docker Socket）。</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">📋</div>
+            <h3>同步日志</h3>
+            <p>完整的操作审计日志，记录 allowlist、Agent 同步等操作结果。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="architecture" aria-labelledby="architecture-title">
+      <div class="container">
+        <header class="section-header">
+          <span class="section-label">Architecture</span>
+          <h2 id="architecture-title">系统架构</h2>
+          <p>三层架构：React 管理前端、Fastify API 后端、OpenClaw Bot 容器；可选接入 AnythingLLM 知识库。</p>
+        </header>
+
+        <div class="diagram-wrap">
+          <svg viewBox="0 0 720 320" role="img" aria-labelledby="arch-title arch-desc">
+            <title id="arch-title">Ding Agent Hub 系统架构图</title>
+            <desc id="arch-desc">React Frontend 连接 Fastify Backend，Fastify Backend 连接 OpenClaw Bot 和 AnythingLLM</desc>
+
+            <!-- Frontend -->
+            <rect x="30" y="40" width="180" height="80" rx="10" fill="#161d2e" stroke="#3b82f6" stroke-width="2"/>
+            <text x="120" y="72" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="700">React Frontend</text>
+            <text x="120" y="92" text-anchor="middle" fill="#94a3b8" font-size="11">Ant Design · Vite · TypeScript</text>
+            <text x="120" y="108" text-anchor="middle" fill="#64748b" font-size="10">端口 8088（宿主机映射）</text>
+
+            <!-- Backend -->
+            <rect x="270" y="40" width="180" height="80" rx="10" fill="#161d2e" stroke="#22d3ee" stroke-width="2"/>
+            <text x="360" y="72" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="700">Fastify Backend</text>
+            <text x="360" y="92" text-anchor="middle" fill="#94a3b8" font-size="11">Node.js · JWT Auth · REST API</text>
+            <text x="360" y="108" text-anchor="middle" fill="#64748b" font-size="10">SQLite (better-sqlite3)</text>
+
+            <!-- OpenClaw -->
+            <rect x="510" y="40" width="180" height="80" rx="10" fill="#161d2e" stroke="#34d399" stroke-width="2"/>
+            <text x="600" y="72" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="700">OpenClaw Bot</text>
+            <text x="600" y="92" text-anchor="middle" fill="#94a3b8" font-size="11">Docker 容器</text>
+            <text x="600" y="108" text-anchor="middle" fill="#64748b" font-size="10">openclaw.json · workspaces</text>
+
+            <!-- Arrows horizontal -->
+            <line x1="210" y1="80" x2="265" y2="80" stroke="#64748b" stroke-width="2"/>
+            <polygon points="265,80 257,76 257,84" fill="#64748b"/>
+            <text x="237" y="70" text-anchor="middle" fill="#64748b" font-size="9">HTTP/API</text>
+
+            <line x1="450" y1="80" x2="505" y2="80" stroke="#64748b" stroke-width="2"/>
+            <polygon points="505,80 497,76 497,84" fill="#64748b"/>
+            <text x="477" y="70" text-anchor="middle" fill="#64748b" font-size="9">docker exec</text>
+
+            <!-- AnythingLLM -->
+            <rect x="270" y="190" width="180" height="80" rx="10" fill="#161d2e" stroke="#a78bfa" stroke-width="2"/>
+            <text x="360" y="222" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="700">AnythingLLM</text>
+            <text x="360" y="242" text-anchor="middle" fill="#94a3b8" font-size="11">Knowledge Base（可选）</text>
+            <text x="360" y="258" text-anchor="middle" fill="#64748b" font-size="10">部门级工作空间</text>
+
+            <line x1="360" y1="120" x2="360" y2="185" stroke="#64748b" stroke-width="2" stroke-dasharray="5 4"/>
+            <polygon points="360,185 356,177 364,177" fill="#64748b"/>
+
+            <!-- Docker socket -->
+            <rect x="510" y="190" width="180" height="80" rx="10" fill="#161d2e" stroke="#fbbf24" stroke-width="2"/>
+            <text x="600" y="222" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="700">Docker Socket</text>
+            <text x="600" y="242" text-anchor="middle" fill="#94a3b8" font-size="11">/var/run/docker.sock</text>
+            <text x="600" y="258" text-anchor="middle" fill="#64748b" font-size="10">容器状态监控</text>
+
+            <line x1="450" y1="120" x2="600" y2="185" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+            <!-- DingTalk -->
+            <rect x="30" y="190" width="180" height="80" rx="10" fill="rgba(59,130,246,0.1)" stroke="rgba(59,130,246,0.4)" stroke-width="1.5"/>
+            <text x="120" y="222" text-anchor="middle" fill="#93c5fd" font-size="14" font-weight="700">钉钉 DingTalk</text>
+            <text x="120" y="242" text-anchor="middle" fill="#94a3b8" font-size="11">allowFrom · dmPolicy</text>
+            <text x="120" y="258" text-anchor="middle" fill="#64748b" font-size="10">AI Card 流式回调</text>
+
+            <line x1="210" y1="230" x2="505" y2="100" stroke="#64748b" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+          </svg>
+          <p class="diagram-caption">架构图基于 README 描述绘制 · 管理面板通过 Docker exec 读写 OpenClaw 容器内配置与工作空间</p>
+        </div>
+
+        <dl class="tech-grid" style="margin-top: 1.5rem;">
+          <div class="tech-item">
+            <dt>前端</dt>
+            <dd>React 19 + TypeScript + Vite + Ant Design</dd>
+          </div>
+          <div class="tech-item">
+            <dt>后端</dt>
+            <dd>Node.js + Fastify 5 + SQLite (better-sqlite3)</dd>
+          </div>
+          <div class="tech-item">
+            <dt>部署</dt>
+            <dd>Docker + Docker Compose，多阶段构建</dd>
+          </div>
+          <div class="tech-item">
+            <dt>Bot 运行时</dt>
+            <dd>OpenClaw（需预先运行的 Docker 容器）</dd>
+          </div>
+          <div class="tech-item">
+            <dt>知识库（可选）</dt>
+            <dd>AnythingLLM，按部门自动创建工作空间</dd>
+          </div>
+          <div class="tech-item">
+            <dt>网络</dt>
+            <dd>需接入外部 <code>claworc</code> Docker 网络</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <section id="isolation" aria-labelledby="isolation-title">
+      <div class="container">
+        <header class="section-header">
+          <span class="section-label">Isolation</span>
+          <h2 id="isolation-title">工作空间与 per-user 隔离</h2>
+          <p>每个活跃用户拥有独立的 Agent ID、工作空间目录和钉钉 binding，停用用户的工作空间会被备份而非删除。</p>
+        </header>
+
+        <div class="flow-steps" style="margin-bottom: 1.5rem;">
+          <div class="flow-step">
+            <span class="flow-num" aria-hidden="true">1</span>
+            <div>
+              <h3>Agent 绑定</h3>
+              <p>活跃用户生成 <code>user-{dingtalk_id}</code> 形式的 Agent ID，并通过 <code>bindings</code> 将钉钉私聊 (<code>direct</code>) 路由到对应 Agent。会话范围设为 <code>per-channel-peer</code>。</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <span class="flow-num" aria-hidden="true">2</span>
+            <div>
+              <h3>独立工作空间</h3>
+              <p>每个用户的工作空间位于 OpenClaw 容器内 <code>{OPENCLAW_WORKSPACES_PATH}/{dingtalk_id}/</code>，包含 AGENTS.md、SOUL.md、USER.md 等模板文件。</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <span class="flow-num" aria-hidden="true">3</span>
+            <div>
+              <h3>allowlist 访问控制</h3>
+              <p>仅活跃用户的 <code>dingtalk_id</code> 写入 <code>channels.dingtalk.allowFrom</code>，配合 <code>dmPolicy: allowlist</code> 限制机器人私聊访问。无活跃用户时使用占位 ID 阻止所有人。</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <span class="flow-num" aria-hidden="true">4</span>
+            <div>
+              <h3>备份与恢复</h3>
+              <p>停用用户：工作空间从 <code>workspaces/</code> 移至 <code>workspaces-backup/</code>。重新启用：从备份目录恢复。新用户：从 <code>workspace-templates/</code> 初始化文件。</p>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom: 0.75rem; font-size: 1rem;">工作空间模板文件</h3>
+        <div class="template-grid">
+          <div class="template-item"><code>AGENTS.md</code><p>Agent 角色和协作机制</p></div>
+          <div class="template-item"><code>BOOTSTRAP.md</code><p>系统初始化工作流</p></div>
+          <div class="template-item"><code>HEARTBEAT.md</code><p>监控和告警配置</p></div>
+          <div class="template-item"><code>IDENTITY.md</code><p>Agent 身份定义</p></div>
+          <div class="template-item"><code>SOUL.md</code><p>核心原则和风格</p></div>
+          <div class="template-item"><code>TOOLS.md</code><p>工具栈和集成</p></div>
+          <div class="template-item"><code>USER.md</code><p>用户上下文信息</p></div>
+        </div>
+        <p style="margin-top: 0.75rem; font-size: 0.88rem; color: var(--color-text-muted);">模板位于仓库 <code>workspace-templates/</code> 目录，可在 <code>openclaw-sync.js</code> 的 <code>mkdirScript</code> 中自定义。</p>
+      </div>
+    </section>
+
+    <section id="sync" aria-labelledby="sync-title">
+      <div class="container">
+        <header class="section-header">
+          <span class="section-label">Sync</span>
+          <h2 id="sync-title">同步机制</h2>
+          <p>当用户状态变更时，Admin Panel 自动更新 allowList、同步 Agent binding 并管理工作空间。</p>
+        </header>
+
+        <div class="two-col">
+          <div class="state-card state-enable">
+            <h3><span aria-hidden="true">✅</span> 启用用户</h3>
+            <ul>
+              <li>创建 Agent + Binding</li>
+              <li>创建或从备份恢复工作空间</li>
+              <li>加入钉钉 allowList</li>
+            </ul>
+          </div>
+          <div class="state-card state-disable">
+            <h3><span aria-hidden="true">⛔</span> 停用用户</h3>
+            <ul>
+              <li>移除 Agent + Binding</li>
+              <li>备份工作空间至 workspaces-backup</li>
+              <li>移出钉钉 allowList</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="flow-steps" style="margin-top: 1.5rem;">
+          <div class="flow-step">
+            <span class="flow-num" aria-hidden="true">1</span>
+            <div>
+              <h3>更新 allowList</h3>
+              <p>修改 OpenClaw 配置中的 <code>channels.dingtalk.allowFrom</code>。</p>
+            </div>
+          </div>
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+          <div class="flow-step">
+            <span class="flow-num" aria-hidden="true">2</span>
+            <div>
+              <h3>同步 Agent</h3>
+              <p>为活跃用户创建 agent binding，移除停用用户的 binding（含 mutex 防并发）。</p>
+            </div>
+          </div>
+          <div class="flow-arrow" aria-hidden="true">↓</div>
+          <div class="flow-step">
+            <span class="flow-num" aria-hidden="true">3</span>
+            <div>
+              <h3>管理工作空间</h3>
+              <p>新用户创建工作空间，停用用户备份，重新启用时恢复。所有操作写入 <code>sync_log</code> 审计表。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="deploy" aria-labelledby="deploy-title">
+      <div class="container">
+        <header class="section-header">
+          <span class="section-label">Deploy</span>
+          <h2 id="deploy-title">部署指南</h2>
+          <p>完整管理面板需在具备 Docker 环境的机器上本地部署，默认访问 <code>http://localhost:8088</code>。</p>
+        </header>
+
+        <h3 style="margin-bottom: 0.75rem; font-size: 1rem;">前置条件</h3>
+        <ul style="margin: 0 0 1.5rem; padding-left: 1.25rem; color: var(--color-text-muted);">
+          <li>Docker &amp; Docker Compose</li>
+          <li>运行中的 OpenClaw bot 容器</li>
+          <li>（可选）AnythingLLM 实例</li>
+          <li>外部 Docker 网络 <code>claworc</code>（docker-compose.yml 中引用）</li>
+        </ul>
+
+        <ol class="steps-list">
+          <li>
+            <div>
+              <h3>克隆项目</h3>
+              <p>获取源代码到本地。</p>
+              <pre class="code-block"><code>git clone https://github.com/UnstoppableCurry/ding-agent-hub.git
+cd ding-agent-hub</code></pre>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>配置环境变量</h3>
+              <p>复制示例配置并修改密码与容器相关设置。</p>
+              <pre class="code-block"><code>cp .env.example .env
+<span class="comment"># 编辑 .env，修改 JWT_SECRET、ADMIN_PASSWORD 和容器配置</span></code></pre>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>启动服务</h3>
+              <p>构建并后台运行 admin-panel 容器。</p>
+              <pre class="code-block"><code>docker compose up -d --build</code></pre>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>登录管理面板</h3>
+              <p>访问 <code>http://localhost:8088</code>，使用 <code>.env</code> 中配置的 <code>ADMIN_USERNAME</code> / <code>ADMIN_PASSWORD</code> 登录。</p>
+            </div>
+          </li>
+        </ol>
+
+        <h3 style="margin: 2rem 0 0.75rem; font-size: 1rem;">环境变量</h3>
+        <div class="table-wrap">
+          <table>
+            <caption class="sr-only">环境变量配置表</caption>
+            <thead>
+              <tr>
+                <th scope="col">变量</th>
+                <th scope="col">说明</th>
+                <th scope="col">默认值</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>JWT_SECRET</code></td><td>JWT 签名密钥</td><td><code>change-me-to-a-random-string</code></td></tr>
+              <tr><td><code>ADMIN_USERNAME</code></td><td>管理员用户名</td><td><code>admin</code></td></tr>
+              <tr><td><code>ADMIN_PASSWORD</code></td><td>管理员密码</td><td><code>admin123</code></td></tr>
+              <tr><td><code>DB_PATH</code></td><td>SQLite 数据库路径</td><td><code>/app/data/admin.db</code></td></tr>
+              <tr><td><code>DOCKER_SOCKET</code></td><td>Docker socket 路径</td><td><code>/var/run/docker.sock</code></td></tr>
+              <tr><td><code>OPENCLAW_CONTAINER</code></td><td>OpenClaw bot 容器名</td><td><code>bot-openclaw-1</code></td></tr>
+              <tr><td><code>OPENCLAW_CONFIG_PATH</code></td><td>bot 容器内配置文件路径</td><td><code>/home/claworc/.openclaw/openclaw.json</code></td></tr>
+              <tr><td><code>OPENCLAW_WORKSPACES_PATH</code></td><td>bot 容器内工作空间路径</td><td><code>/home/claworc/.openclaw/workspaces</code></td></tr>
+              <tr><td><code>ANYTHINGLLM_URL</code></td><td>AnythingLLM 地址</td><td><code>http://anythingllm:3001</code></td></tr>
+              <tr><td><code>ANYTHINGLLM_API_KEY</code></td><td>AnythingLLM API Key</td><td>（空）</td></tr>
+              <tr><td><code>MONITOR_CONTAINERS</code></td><td>监控的容器名（逗号分隔）</td><td><code>bot-openclaw-1</code></td></tr>
+              <tr><td><code>ADMIN_PORT</code></td><td>宿主机端口映射</td><td><code>8088</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="margin: 2rem 0 0.75rem; font-size: 1rem;">安全注意事项</h3>
+        <ul style="margin: 0; padding-left: 1.25rem; color: var(--color-text-muted); font-size: 0.92rem;">
+          <li>务必修改默认的 <code>JWT_SECRET</code> 和 <code>ADMIN_PASSWORD</code></li>
+          <li>Docker socket 挂载赋予了容器对宿主机 Docker 的完全访问权限</li>
+          <li>建议在内网环境部署，或配置反向代理 + HTTPS</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="api" aria-labelledby="api-title">
+      <div class="container">
+        <header class="section-header">
+          <span class="section-label">API</span>
+          <h2 id="api-title">REST API 接口</h2>
+          <p>后端 Fastify 服务提供的 API 端点（除登录外均需 JWT 认证）。</p>
+        </header>
+
+        <div class="table-wrap">
+          <table>
+            <caption class="sr-only">API 接口列表</caption>
+            <thead>
+              <tr>
+                <th scope="col">方法</th>
+                <th scope="col">路径</th>
+                <th scope="col">说明</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>POST</code></td><td><code>/api/auth/login</code></td><td>登录</td></tr>
+              <tr><td><code>GET</code></td><td><code>/api/users</code></td><td>用户列表（支持分页、搜索、部门筛选）</td></tr>
+              <tr><td><code>POST</code></td><td><code>/api/users</code></td><td>创建用户</td></tr>
+              <tr><td><code>PUT</code></td><td><code>/api/users/:id</code></td><td>更新用户</td></tr>
+              <tr><td><code>DELETE</code></td><td><code>/api/users/:id</code></td><td>删除用户</td></tr>
+              <tr><td><code>POST</code></td><td><code>/api/users/import</code></td><td>Excel 批量导入</td></tr>
+              <tr><td><code>POST</code></td><td><code>/api/users/batch-update</code></td><td>批量启用/停用</td></tr>
+              <tr><td><code>POST</code></td><td><code>/api/users/sync</code></td><td>全量同步到 OpenClaw</td></tr>
+              <tr><td><code>GET</code></td><td><code>/api/departments</code></td><td>部门列表</td></tr>
+              <tr><td><code>GET</code></td><td><code>/api/status</code></td><td>仪表盘状态</td></tr>
+              <tr><td><code>GET</code></td><td><code>/api/sync-logs</code></td><td>同步日志</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="limitations" aria-labelledby="limitations-title">
+      <div class="container">
+        <header class="section-header">
+          <span class="section-label">Notes</span>
+          <h2 id="limitations-title">说明与限制</h2>
+          <p>以下为本项目的实际约束，本静态文档站不包含任何虚构的功能承诺或演示数据。</p>
+        </header>
+
+        <div class="limitation-list">
+          <div class="limitation-item">
+            <span class="limitation-icon" aria-hidden="true">!</span>
+            <p><strong>无在线演示：</strong>管理面板依赖 Fastify 后端、SQLite 数据库、Docker Socket 及 OpenClaw 容器，无法在 GitHub Pages 上运行交互式 Demo。</p>
+          </div>
+          <div class="limitation-item">
+            <span class="limitation-icon" aria-hidden="true">!</span>
+            <p><strong>依赖外部 OpenClaw：</strong>需预先部署并运行 OpenClaw bot 容器，且 admin-panel 须接入 <code>claworc</code> Docker 网络。</p>
+          </div>
+          <div class="limitation-item">
+            <span class="limitation-icon" aria-hidden="true">!</span>
+            <p><strong>AnythingLLM 为可选组件：</strong>部门级知识库功能需单独部署 AnythingLLM 并配置 API Key。</p>
+          </div>
+          <div class="limitation-item">
+            <span class="limitation-icon" aria-hidden="true">!</span>
+            <p><strong>Docker Socket 权限：</strong>容器挂载宿主机 Docker socket，具有对 Docker 守护进程的完全访问权限，部署时需谨慎评估。</p>
+          </div>
+          <div class="limitation-item">
+            <span class="limitation-icon" aria-hidden="true">!</span>
+            <p><strong>默认凭据需修改：</strong>开箱即用的 <code>admin/admin123</code> 和默认 JWT 密钥仅适用于开发测试。</p>
+          </div>
+          <div class="limitation-item">
+            <span class="limitation-icon" aria-hidden="true">!</span>
+            <p><strong>无截图/演示素材：</strong>本页面未包含管理面板截图；UI 基于 Ant Design 组件库构建，具体界面请以本地部署为准。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-inner">
+      <div>
+        <p><strong>Ding Agent Hub</strong> — 钉钉 AI Agent 企业管理平台</p>
+        <p>基于 <a href="https://github.com/nicepkg/openclaw" target="_blank" rel="noopener noreferrer">OpenClaw</a> · <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT License</a></p>
+      </div>
+      <nav class="footer-links" aria-label="页脚链接">
+        <a href="https://github.com/UnstoppableCurry/ding-agent-hub">GitHub 仓库</a>
+        <a href="https://github.com/UnstoppableCurry/ding-agent-hub/blob/main/README.md">README（中文）</a>
+        <a href="https://github.com/UnstoppableCurry/ding-agent-hub/blob/main/README_EN.md">README（English）</a>
+        <a href="#deploy">部署指南</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="js/main.js" defer></script>
+</body>
+</html>

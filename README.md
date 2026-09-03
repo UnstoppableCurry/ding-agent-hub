@@ -2,6 +2,8 @@
 
 钉钉 AI Agent 企业管理平台 — 基于 [OpenClaw](https://github.com/nicepkg/openclaw) 的一站式解决方案，为企业提供可视化的用户管理、部门管理、Agent 隔离和工作空间同步。
 
+📖 **[架构与产品文档（GitHub Pages）](https://unstoppablecurry.github.io/ding-agent-hub/)** — 静态说明站，含系统架构、隔离机制、部署指南与 API 参考（不提供在线 Demo，完整功能需本地 Docker 部署）。
+
 ## 功能特性
 
 - **用户管理**: 增删改查、批量导入(Excel)、批量启用/停用
