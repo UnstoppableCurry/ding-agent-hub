@@ -2,6 +2,8 @@
 
 Enterprise AI Agent management platform for DingTalk — A turnkey solution built on [OpenClaw](https://github.com/nicepkg/openclaw) for managing users, departments, and per-user agent workspaces.
 
+📖 **[Architecture & Docs (GitHub Pages)](https://unstoppablecurry.github.io/ding-agent-hub/)** — Static documentation site with architecture, isolation model, deployment guide, and API reference (no live demo; full app requires local Docker deployment).
+
 ## Features
 
 - **User Management**: CRUD, Excel batch import, batch enable/disable
